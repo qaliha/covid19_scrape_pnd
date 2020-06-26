@@ -180,6 +180,20 @@ app.get('/fetch', async function (req, res) {
       })
     })
 
+    let regex = home.data.matchAll(/(([\w\-\.]+[\-\.][\w\-\.]+)\(\[([\-\+]{0,1}\d[\d\.\,]*[\.\,][\d\.\,]*\d+)\,\s+([\-\+]{0,1}\d[\d\.\,]*[\.\,][\d\.\,]*\d+)\]\,\s+\{(\w+)\:\s+(\w+)\}\))/g)
+    let regexIcon = home.data.matchAll(/((\w+)\:\s+'((https):\/\/([\w\-\.]+|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(:(\d+)){0,1}(\/[\/A-Za-z0-9_\-\.\=\&\?\;\%\+\:]*){0,1})'\,)/g)
+
+    var maps = [];
+    let iw = 0
+    let regexIconMatch = [...regexIcon]
+
+    for (let k of [...regex]) {
+
+      maps.push([k[3], k[4], regexIconMatch[iw][3]])
+
+      iw++
+    }
+
     var data_recent = {
       slideshow: [
         {
@@ -254,7 +268,8 @@ app.get('/fetch', async function (req, res) {
           dead: Math.round((parseInt(_otg_dead) / parseInt(_otg_total)) * 100).toFixed(2) + "%",
         }
       },
-      kecamatan: kecamatan_data
+      kecamatan: kecamatan_data,
+      maps: maps
     }
 
     fs.writeFileSync('cache.json', JSON.stringify(data_recent))
