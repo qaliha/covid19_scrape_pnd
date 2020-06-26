@@ -1,15 +1,22 @@
 const express = require('express')
 const cheerio = require('cheerio')
 const axios = require('axios')
+const fs = require('fs')
 
 const app = express()
-
-let data_recent = null;
 
 /**
  * Fetch the last data
  */
 app.get('/', function (req, res) {
+
+  var data_recent = null
+
+  if (fs.existsSync('cache.json')) {
+    try {
+      data_recent = JSON.parse(fs.readFileSync('cache.json'))
+    } catch (e){}
+  }
 
   if (data_recent == null) {
     return res.send({
@@ -173,7 +180,7 @@ app.get('/fetch', async function (req, res) {
       })
     })
 
-    data_recent = {
+    var data_recent = {
       slideshow: [
         {
           url: 'https://i.ibb.co/N2TJHQf/Untitled-1.png',
@@ -249,6 +256,8 @@ app.get('/fetch', async function (req, res) {
       },
       kecamatan: kecamatan_data
     }
+
+    fs.writeFileSync('cache.json', JSON.stringify(data_recent))
 
   } catch (e) {
     console.log(e)
