@@ -1,35 +1,52 @@
 const express = require('express')
 const cheerio = require('cheerio')
 const axios = require('axios')
+const redis = require('redis')
 const fs = require('fs')
+const url = require("url")
 
 const app = express()
 
 /**
+ * Initialize redis
+ */
+
+var redis_client;
+
+if (process.env.REDISTOGO_URL) {
+  var rtg = url.parse(process.env.REDISTOGO_URL);
+  redis_client = redis.createClient(rtg.port, rtg.hostname);
+
+  redis_client.auth(rtg.auth.split(":")[1]);
+} else {
+  redis_client = redis.createClient()
+}
+
+/**
  * Fetch the last data
  */
-app.get('/', function (req, res) {
+app.get('/', function (_, res) {
 
-  var data_recent = null
-
-  if (fs.existsSync('cache.json')) {
-    try {
-      data_recent = JSON.parse(fs.readFileSync('cache.json'))
-    } catch (e){}
-  }
-
-  if (data_recent == null) {
-    return res.send({
+  if (redis_client == null) {
+    res.send({
       status: false,
       error: 'Belum ada data yang terkumpul'
     })
+  } else {
+    redis_client.get('cache', function (err, data) {
+      if (data == null) {
+        res.send({
+          status: false,
+          error: 'Belum ada data yang terkumpul'
+        })
+      } else {
+        res.send({
+          status: true,
+          data: JSON.parse(data)
+        })
+      }
+    })
   }
-
-  return res.send({
-    status: true,
-    data: data_recent
-  })
-
 })
 
 var htmlEntities = {
@@ -69,7 +86,13 @@ function unescapeHTML(str) {
  * Get last data from website
  * Scrape the data
  */
-app.get('/fetch', async function (req, res) {
+app.get('/fetch', async function (_, res) {
+
+  if (redis_client == null) {
+    return res.send({
+      message: 'Redis belum siap'
+    })
+  }
 
   try {
     /**
@@ -272,7 +295,7 @@ app.get('/fetch', async function (req, res) {
       maps: maps
     }
 
-    fs.writeFileSync('cache.json', JSON.stringify(data_recent))
+    redis_client.set('cache', JSON.stringify(data_recent))
 
   } catch (e) {
     console.log(e)
