@@ -120,6 +120,12 @@ app.get('/fetch', async function (_, res) {
     const _confirmed_dead_change = $('#content > div > div > section > div:nth-child(2) > div:nth-child(4) > div > div.sb-msg > div > a').html().replace(/\(|\)/, '')
 
     /**
+     * RDT
+     */
+    const _rdt = $('#content > div > div > section > div:nth-child(6) > div:nth-child(1) > div > h4:nth-child(2)').html()
+    const _pcr = $('#content > div > div > section > div:nth-child(6) > div:nth-child(2) > div > h4:nth-child(2)').html()
+
+    /**
      * ODP
      */
     const _odp_total = $('#content > div > div > section > div:nth-child(3) > div:nth-child(1) > div > div.sb-msg > div > div:nth-child(1) > div.counter.center > span').attr('data-to')
@@ -193,14 +199,33 @@ app.get('/fetch', async function (_, res) {
     }
 
     let beritas = []
+    let beritas_i = 0
 
     $$('#oc-posts').children().map((i, div) => {
+      if (beritas_i >= 5) return
+
       beritas.push({
         title: unescapeHTML($$(div).find('.entry-title > h3 > a').html().trim()),
         image: $$(div).find('.entry-image > img').attr('src'),
         link: $$(div).find('.entry-title > h3 > a').attr('href'),
         description: unescapeHTML($$(div).find('.entry-content').html().trim())
       })
+
+      beritas_i++
+    })
+
+    let infographisc = []
+    let infographisc_i = 0
+
+    $$('#related-portfolio').children().map((i, div) => {
+      if (infographisc_i >= 4) return
+
+      infographisc.push({
+        image: $$(div).find('.oc-item > .iportfolio > .portfolio-image > a > img').attr('src'),
+        title: $$(div).find('.oc-item > .iportfolio > .portfolio-desc > h5 > a').html().trim(),
+      })
+
+      infographisc_i++
     })
 
     let regex = home.data.matchAll(/(([\w\-\.]+[\-\.][\w\-\.]+)\(\[([\-\+]{0,1}\d[\d\.\,]*[\.\,][\d\.\,]*\d+)\,\s+([\-\+]{0,1}\d[\d\.\,]*[\.\,][\d\.\,]*\d+)\]\,\s+\{(\w+)\:\s+(\w+)\}\))/g)
@@ -228,6 +253,9 @@ app.get('/fetch', async function (_, res) {
           to: 'https://covid19.pangandarankab.go.id/'
         }
       ],
+      rdt: parseInt(_rdt),
+      pcr: parseInt(_pcr),
+      infographisc: infographisc,
       beritas: beritas,
       population: total_populasi,
       ratio: Math.floor(total_populasi / parseInt(_confirmed)).toLocaleString(),
